@@ -13,7 +13,7 @@ P al(Z z){P r;if(!(r=malloc(z)))e("memory");R r;}//malloc&check.
 P ca(Z k,Z z){P r;if(!(r=calloc(k,z)))e("memory");R r;}//calloc&check.
 P re(P p,Z z){P r;if(!(r=realloc(p,z)))e("memory");R r;}//realloc&check.
 V clr(T*p,Z s,Z z){for(;s<z;s++)p[s]=nil;}//clear memory piece.
-V frT(T t,I d){if(!t)R;if(t->y==var||t->y==num)free(t);else if(d){frT(t->h,d>0?d-1:d);frT(t->t,d>0?d-1:d);}}//free tree recursively.
+V frT(T t,I d){if(!t)R;if(t->y==var||t->y==num)free(t);else if(d){frT(t->h,d>0?d-1:d);frT(t->t,d>0?d-1:d);free(t);}}//free tree recursively.
 V ih(I v){h=al(sizeof(struct H));h->v=v;if(h->v)PR("gc: init.\n");h->z=16;h->p=0;h->a=ca(h->z,sizeof(T));clr(h->a,0,h->z);h->r=nil;}//init heap.
 V dh(){if(h->v)PR("gc: deinit.\n");free(h->a);free(h);frT(h->r,-1);}//delete heap.
 I in(T a,T b){if(a==b)R 1;if(!b||b->y==var||b->y==num)R 0;if(a==b->h)R 1;else if(a==b->t)R 1;else if(in(a,b->h))R 1;else if(in(a,b->t))R 1;else R 0;}//check that a is in b.
