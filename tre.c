@@ -109,8 +109,8 @@ T c(S s){h->r=cons(cons(tree(nil,nil),cons(cons(nil,nil),cons(nil,nil))),nil);T 
  case '[':DP;BT=cp(p->h);DE;break;
  case '\\':np=!np;break;
  case ']':DP;BT=cp(p->t);DE;break;
- case '_':p->h=BT;break;
- case '`':p->t=BT;break;
+ case '_':DP;p->h=cp(BT);DE;break;
+ case '`':DP;p->t=cp(BT);DE;break;
  case '|':ns=!ns;break;}}R h->r=r;}//compile.
 T ld(S s){Z z;FILE*f=fopen(s,"rb");if(!f)e("file");fseek(f,0,SEEK_END);z=ftell(f);rewind(f);
  S b=al(z+1);if(fread(b,1,z,f)!=z)e("file");fclose(f);b[z]=0;T t=c(b);free(b);R t;}//load file.
