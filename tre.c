@@ -64,8 +64,7 @@ T rp(C p,T x){D a,b;T t,e;switch(p){
  case 'm':a=t2i(r(xn(x,0)));b=t2i(r(xn(x,1)));x=a<=b?cons(nil,nil):nil;break;
  case 'n':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=eq(t,e)?cons(nil,nil):nil;break;
  case 'o':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=!eq(t,e)?cons(nil,nil):nil;break;
- case 'p':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=mp(t,e);break;}
-R x;}//reduce prim.
+ case 'p':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=mp(t,e);break;}R x;}//reduce prim.
 T r(T t){C v;if(!t)R t;switch(t->y){case var:case num:case lam:case cons:R t;
  case tree:r(t->h);t->h=nil;R t->t=r(t->t);case cond:t->h=r(t->h);t->t=r(t->t);R r(rd(t->h,t->t));
  case app:t->h=r(t->h);t->t=r(t->t);R r(ra(t->h,t->t));
