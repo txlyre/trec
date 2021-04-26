@@ -96,8 +96,8 @@ T c(S s){h->r=cons(tree(nil,nil),cons(cons(nil,nil),cons(nil,nil)));T p=PT,r=PT;
  case ':':p->t=var(0);break;
  case ';':PO(Q1,p);break;
  case '<':p=r;Q1=cons(nil,nil);break;
- case '=':if(p->h)p=p->h;break;
- case '>':if(p->t)p=p->t;break;
+ case '=':if(p->h&&p->h->y!=var&&p->h->y!=num)p=p->h;break;
+ case '>':if(p->t&&p->t->y!=var&&p->t->y!=num)p=p->t;break;
  case '?':PU(Q2,p);break;
  case '@':PO(Q2,p);break;
  case '\\':np=!np;break;}}R h->r=r;}//compile.
