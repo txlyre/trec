@@ -22,6 +22,8 @@ V ct(){if(h->p){if(h->v)PR("gc: paused.\n");R;}if(h->v)printf("gc: collect start
 V ex(){if(h->v)PR("gc: expand heap.\n");Z k=h->z;h->z*=2;h->a=re(h->a,h->z*sizeof(T));clr(h->a,k,h->z);}//expand heap.
 T ha(){if(h->z==h->k)ct();if(h->z==h->k)ex();T t=nil;for(Z i=0;i<h->z;i++)if(!h->a[i]){if(h->v)printf("gc: heap allocation %zu!\n",i);h->a[i]=t=al(sizeof(struct T));h->k++;break;}if(!t)e("memory");R t;}//allocate tree in the heap.
 T aT(Y y,C v,D n,T h,T t){T r=ha();r->y=y;r->v=v;r->n=n;r->h=h;r->t=t;R r;}//allocate tree.
+#define DP {ct();I pst=h->p;h->p=1//do paused start.
+#define DE h->p=pst;ct();}//do paused end.
 #define var(v)(aT(var,v,0,nil,nil))
 #define num(n)(aT(num,0,n,nil,nil))
 #define tree(h,t)(aT(tree,0,0,h,t))
@@ -42,12 +44,13 @@ T cp(T t){if(!t)R t;R aT(t->y,t->v,t->n,cp(t->h),cp(t->t));}//copy tree.
 T sb(T w,T x,T y){if(!w)R w;if(!x||x->y!=var)R w;if(w->y==var){if(w->v==x->v)R y;R w;}if(w->y==lam||w->y==prim){w->t=sb(w->t,x,y);R w;}
  if(w->h&&w->h->y==var&&w->h->v==x->v)w->h=y;else if(w->h)w->h=sb(w->h,x,y);
  if(w->t&&w->t->y==var&&w->t->v==x->v)w->t=y;else if(w->t)w->t=sb(w->t,x,y);R w;}//substitute var.
-T ra(T f,T x){if(!f)R nil;if(f->y!=lam)R x;h->p=1;T u=cp(f);if(f->h&&f->h->y==var)f->t=sb(f->t,f->h,x);T v=var(0);f->t=sb(f->t,v,u);h->p=0;R f->t;}//reduce apply.
-T xn(T t,I n){for(I i=0;t&&t->y==cons;t=t->t,i++)if(i==n)R t->h;R nil;}//get nth element.
-T sn(T t,I n,T x){for(I i=0;t&&t->y==cons;t=t->t,i++)if(i==n)R t->h=x;R x;}//set nth element.
+T ra(T f,T x){if(!f)R nil;if(f->y!=lam)R x;DP;T u=cp(f),v=var(0);if(f->h&&f->h->y==var)f->t=sb(f->t,f->h,x);f->t=sb(f->t,v,u);DE;R f->t;}//reduce apply.
+I ln(T t){I z=0;while(t&&t->y==cons){z++;t=t->t;};R z;}//length.
+T xn(T t,I n){if(n<0)n=ln(t)+n;if(n<0)R nil;for(I i=0;t&&t->y==cons;t=t->t,i++)if(i==n)R t->h;R nil;}//get nth element.
+T sn(T t,I n,T x){if(n<0)n=ln(t)+n;if(n<0)R x;for(I i=0;t&&t->y==cons;t=t->t,i++)if(i==n)R t->h=x;R x;}//set nth element.
 D t2i(T t){if(!t||t->y!=num)R 0;R t->n;}//try to convert to num.
 I eq(T x,T y){if(!x&&y)R 0;else if(x&&!y)R 0;if(x==y)R 1;if(x->y==y->y){if(x->y==var)R x->v==y->v;else if(x->y==num)R x->n==y->n;R eq(x->h,y->h)&&eq(x->t,y->t);}R 0;}//equals.
-T mp(T f,T x){T e=x;while(x&&x->y==cons){h->p=1;T u=cp(f);h->p=0;x->h=ra(u,r(x->h));x->h=r(x->h);x=x->t;}R e;}//map.
+T mp(T f,T x){T e=x;while(x&&x->y==cons){DP;T u=cp(f);x->h=ra(u,r(x->h));x->h=r(x->h);x=x->t;DE;}R e;}//map.
 T rp(C p,T x){D a,b;T t,e;switch(p){
  case 'a':putchar('\n');x=nil;break;
  case 'b':prT(x,0);x=nil;break;
@@ -64,18 +67,21 @@ T rp(C p,T x){D a,b;T t,e;switch(p){
  case 'm':a=t2i(r(xn(x,0)));b=t2i(r(xn(x,1)));x=a<=b?cons(nil,nil):nil;break;
  case 'n':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=eq(t,e)?cons(nil,nil):nil;break;
  case 'o':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=!eq(t,e)?cons(nil,nil):nil;break;
- case 'p':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=mp(t,e);break;}R x;}//reduce prim.
+ case 'p':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=mp(t,e);break;
+ case 'q':t=sn(x,0,r(xn(x,0)));a=t2i(r(xn(x,1)));x=xn(t,a);break;
+ case 'r':x=num(ln(x));break;}R x;}//reduce prim.
 T r(T t){C v;if(!t)R t;switch(t->y){case var:case num:case lam:case cons:R t;
  case tree:r(t->h);t->h=nil;R t->t=r(t->t);case cond:t->h=r(t->h);t->t=r(t->t);R r(rd(t->h,t->t));
  case app:t->h=r(t->h);t->t=r(t->t);R r(ra(t->h,t->t));
  case prim:v=t->h?t->h->v:0;t->h=nil;t->t=r(t->t);R r(rp(v,t->t));}}//reduce tree.
 #define PU(w,x){if(!w->h)w->h=x;else w=cons(x,w);}//push.
 #define PO(w,x){if(w->h&&!w->t){x=w->h;w->h=nil;}else if(w->h&&w->t){x=w->h;w=w->t;}}//pop.
-#define PT (h->r->h)
-#define Q1 (h->r->t->h)
-#define Q2 (h->r->t->t)
+#define PT (h->r->h->h)
+#define Q1 (h->r->h->t->h)
+#define Q2 (h->r->h->t->t)
+#define BT (h->r->t)
 #define isd(c)((c)>='0'&&(c)<='9')
-T c(S s){h->r=cons(tree(nil,nil),cons(cons(nil,nil),cons(nil,nil)));T p=PT,r=PT;I m=0;Z i=0;I np=0;while(s[i++]){C c=s[i-1];if(isd(c)){Z z=8,n=0;S b=al(z);while(isd(c)||c=='.'){b[n++]=c;if(n==z-1){z+=8;b=re(b,z);}c=s[i++];}D d=strtod(b,nil);if(!np)p->h=num(d);else p->t=num(d);i--;continue;}if(c=='{')m=1;if(m){if(c=='}')m=0;continue;}switch(c){
+T c(S s){h->r=cons(cons(tree(nil,nil),cons(cons(nil,nil),cons(nil,nil))),nil);T p=PT,r=PT;I m=0,np=0,ns=0;Z i=0;while(s[i++]){C c=s[i-1];if(isd(c)){Z z=2,n=0;S b=al(z);while(isd(c)||c=='.'){b[n++]=c;if(n==z-1){z++;b=re(b,z);}c=s[i++];}b[n]=0;D d=strtod(b,nil);free(b);d=ns?-d:d;if(np)p->t=num(d);else p->h=num(d);i--;continue;}if(c=='{')m=1;if(m){if(c=='}')m=0;continue;}switch(c){
  case 'a'...'z':p->h=var(c);break;
  case 'A'...'Z':p->t=var('a'+(c-'A'));break;
  case '!':PU(Q1,p);p->h=tree(nil,nil);p=p->h;break;
@@ -100,13 +106,19 @@ T c(S s){h->r=cons(tree(nil,nil),cons(cons(nil,nil),cons(nil,nil)));T p=PT,r=PT;
  case '>':if(p->t&&p->t->y!=var&&p->t->y!=num)p=p->t;break;
  case '?':PU(Q2,p);break;
  case '@':PO(Q2,p);break;
- case '\\':np=!np;break;}}R h->r=r;}//compile.
+ case '[':DP;BT=cp(p->h);DE;break;
+ case '\\':np=!np;break;
+ case ']':DP;BT=cp(p->t);DE;break;
+ case '_':p->h=BT;break;
+ case '`':p->t=BT;break;
+ case '|':ns=!ns;break;}}R h->r=r;}//compile.
 T ld(S s){Z z;FILE*f=fopen(s,"rb");if(!f)e("file");fseek(f,0,SEEK_END);z=ftell(f);rewind(f);
  S b=al(z+1);if(fread(b,1,z,f)!=z)e("file");fclose(f);b[z]=0;T t=c(b);free(b);R t;}//load file.
 T ip(){C l[1024];Z z=1,k=0;S b=al(z);while(fgets(l,sizeof(l),stdin)){Z lz=strlen(l);k+=lz;if(k>=z){z+=lz;b=re(b,z);}strcat(b,l);}
  T t=c(b);free(b);R t;}//input.
+V ph(I c){puts("usage: trec [-vtsh] [file]");exit(c);}//print help.
+V bf(I c){fprintf(stderr,"?%c\n",c);ph(1);}//bad flag.
 I main(I k,S*a){I fv,ft,fs;fv=ft=fs=0;S ap=nil;T t;
- for(I i=1;i<k;i++)if(!strcmp(a[i],"-v"))fv=!fv;else if(!strcmp(a[i],"-t"))ft=!ft;
- else if(!strcmp(a[i],"-s"))fs=!fs;else ap=a[i];ih(fv);
+ for(I i=1;i<k;i++)if(*a[i]=='-'){for(I j=1,c=0;(c=a[i][j]);j++)if(c=='v')fv=!fv;else if(c=='t')ft=!ft;else if(c=='s')fs=!fs;else if(c=='h'||c=='?')ph(0);else bf(c);}else ap=a[i];ih(fv);
  if(ap)t=ld(ap);else t=ip();if(ft){PR("---------\n");prT(t,0);putchar('\n');PR("---------\n");}
  ct();t=r(t);if(fs)prT(t,0);ct();h->r=nil;ct();dh();R 0;}
