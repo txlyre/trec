@@ -38,11 +38,11 @@ V prT(T t,I i){for(I k=0;k<i;k++)putchar(' ');if(!t){PR("nil");R;}switch(t->y){
  case app:PR("Apply");break;case prim:PR("Prim");break;}
  putchar('\n');prT(t->h,i+1);putchar('\n');prT(t->t,i+1);}//print tree.
 T r(T);T ra(T,T);T rd(T c,T b){while(b&&b->y==cons){T d=b->h;if(d&&d->y==cons){d->h=r(ra(d->h,c));if(d->h)R d->t;}b=b->t;}R b;} // reduce cond.
-T cp(T t){T a=ha();memcpy(a,t,sizeof(struct T));if(t->t)a->t=cp(t->t);if(t->h)a->h=cp(t->h);R a;}//copy tree.
+T cp(T t){if(!t)R t;R aT(t->y,t->v,t->n,cp(t->h),cp(t->t));}//copy tree.
 T sb(T w,T x,T y){if(!w)R w;if(!x||x->y!=var)R w;if(w->y==var){if(w->v==x->v)R y;R w;}if(w->y==lam||w->y==prim){w->t=sb(w->t,x,y);R w;}
  if(w->h&&w->h->y==var&&w->h->v==x->v)w->h=y;else if(w->h)w->h=sb(w->h,x,y);
  if(w->t&&w->t->y==var&&w->t->v==x->v)w->t=y;else if(w->t)w->t=sb(w->t,x,y);R w;}//substitute var.
-T ra(T f,T x){if(!f)R nil;if(f->y!=lam)R x;h->p=1;T v=var(0);f->t=sb(f->t,v,cp(f));h->p=0;if(!f->h||f->h->y!=var)R f->t;f->t=sb(f->t,f->h,x);f->h=nil;R f->t;}//reduce apply.
+T ra(T f,T x){if(!f)R nil;if(f->y!=lam)R x;h->p=1;T u=cp(f);if(f->h&&f->h->y==var)f->t=sb(f->t,f->h,x);T v=var(0);f->t=sb(f->t,v,u);h->p=0;R f->t;}//reduce apply.
 T xn(T t,I n){for(I i=0;t&&t->y==cons;t=t->t,i++)if(i==n)R t->h;R nil;}//get nth element.
 T sn(T t,I n,T x){for(I i=0;t&&t->y==cons;t=t->t,i++)if(i==n)R t->h=x;R x;}//set nth element.
 D t2i(T t){if(!t||t->y!=num)R 0;R t->n;}//try to convert to num.
@@ -64,7 +64,8 @@ T rp(C p,T x){D a,b;T t,e;switch(p){
  case 'm':a=t2i(r(xn(x,0)));b=t2i(r(xn(x,1)));x=a<=b?cons(nil,nil):nil;break;
  case 'n':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=eq(t,e)?cons(nil,nil):nil;break;
  case 'o':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=!eq(t,e)?cons(nil,nil):nil;break;
- case 'p':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=mp(t,e);break;}R x;}//reduce prim.
+ case 'p':t=sn(x,0,r(xn(x,0)));e=sn(x,1,r(xn(x,1)));x=mp(t,e);break;}
+R x;}//reduce prim.
 T r(T t){C v;if(!t)R t;switch(t->y){case var:case num:case lam:case cons:R t;
  case tree:r(t->h);t->h=nil;R t->t=r(t->t);case cond:t->h=r(t->h);t->t=r(t->t);R r(rd(t->h,t->t));
  case app:t->h=r(t->h);t->t=r(t->t);R r(ra(t->h,t->t));
@@ -96,8 +97,8 @@ T c(S s){h->r=cons(tree(nil,nil),cons(cons(nil,nil),cons(nil,nil)));T p=PT,r=PT;
  case ':':p->t=var(0);break;
  case ';':PO(Q1,p);break;
  case '<':p=r;Q1=cons(nil,nil);break;
- case '=':if(p->h&&p->h->y!=var&&p->h->y!=num)p=p->h;break;
- case '>':if(p->t&&p->t->y!=var&&p->t->y!=num)p=p->t;break;
+ case '=':if(p->h)p=p->h;break;
+ case '>':if(p->t)p=p->t;break;
  case '?':PU(Q2,p);break;
  case '@':PO(Q2,p);break;
  case '\\':np=!np;break;}}R h->r=r;}//compile.
